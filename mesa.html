@@ -1,41 +1,39 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mesa</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f8f9fa;
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
       margin: 0;
-      padding: 20px;
     }
     h2 {
-      font-size: 26px;
       color: #2c3e50;
       margin-bottom: 10px;
     }
     #mesa-id {
-      color: #2980b9;
+      font-size: 24px;
       font-weight: bold;
+      color: #2980b9;
     }
     button {
-      margin-top: 30px;
       padding: 20px 40px;
-      font-size: 20px;
+      font-size: 18px;
       background-color: #e74c3c;
       color: white;
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: background-color 0.3s;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: background-color 0.3s ease;
+      margin-top: 20px;
     }
     button:hover {
       background-color: #c0392b;
@@ -43,31 +41,23 @@
   </style>
 </head>
 <body>
-  <h2>📍 Estás en la mesa <span id="mesa-id"></span></h2>
+  <h2>📍 Mesa <span id="mesa-id"></span></h2>
   <button onclick="llamar()">📣 Llamar al mesero</button>
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const mesa = params.get("mesa");
-    const idSpan = document.getElementById("mesa-id");
-
-    if (!mesa) {
-      idSpan.textContent = "desconocida";
-      alert("⚠️ No se especificó la mesa. Usa '?mesa=5' en la URL.");
-    } else {
-      idSpan.textContent = mesa;
-    }
+    const mesa = params.get("mesa") || "desconocida";
+    document.getElementById("mesa-id").textContent = mesa;
 
     const ws = new WebSocket("wss://llamado-mesero-backend.onrender.com");
-    const llamadas = [];
 
     function llamar() {
-      llamadas.push(ahora);
       ws.send(JSON.stringify({
         type: "llamar_mesero",
         mesa: mesa
       }));
-      alert("✅ Llamado enviado al mesero");
+
+      alert("✅ Solicitud enviada al mesero");
     }
   </script>
 </body>
