@@ -62,20 +62,11 @@
     const llamadas = [];
 
     function llamar() {
-      const ahora = Date.now();
       llamadas.push(ahora);
-
-      const recientes = llamadas.filter(t => ahora - t < 5 * 60 * 1000);
-      if (recientes.length > 3) {
-        alert("🚫 Ya hiciste varios llamados recientemente. Espera unos minutos.");
-        return;
-      }
-
       ws.send(JSON.stringify({
         type: "llamar_mesero",
         mesa: mesa
       }));
-
       alert("✅ Llamado enviado al mesero");
     }
   </script>
