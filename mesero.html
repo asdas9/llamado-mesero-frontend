@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mesero - Llamados de Mesa</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      padding: 20px;
+      color: #333;
+    }
+    h2 {
+      color: #2c3e50;
+    }
+    form {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    #panel-mesero {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background-color: #ecf0f1;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-left: 5px solid #3498db;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Ingreso del Mesero</h2>
+
+  <form id="form-mesero">
+    <label for="meseroId">Nombre o ID del mesero:</label>
+    <input type="text" id="meseroId" required>
+
+    <label for="mesas">Mesas asignadas (ej: 1,2,3):</label>
+    <input type="text" id="mesas" required>
+
+    <button type="submit">Ingresar</button>
+  </form>
+
+  <div id="panel-mesero" style="display:none;">
+    <p id="info"></p>
+    <ul id="alertas"></ul>
+    <audio id="sonido-alerta" src="ding.mp3" preload="auto"></audio>
+  </div>
+
+  <script>
+    const ws = new WebSocket('ws://192.168.0.9:3000');
+    const form = document.getElementById('form-mesero');
+    const panel = document.getElementById('panel-mesero');
+    const info = document.getElementById('info');
+    const alertas = document.getElementById('alertas');
+    const sonido = document.getElementById('sonido-alerta');
+
+    if (Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+
+    let conectado = false;
+
+    ws.onopen = () => {
+      console.log('✅ Conexión establecida con el servidor');
+    };
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!conectado) {
+        const meseroId = document.getElementById('meseroId').value.trim();
+        const mesas = document.getElementById('mesas').value
+          .split(',')
+          .map(m => m.trim());
+
+        ws.send(JSON.stringify({
+          type: 'registrar_mesero',
+          meseroId,
+          mesas
+        }));
+
+        info.textContent = `👤 Eres: ${meseroId} | Mesas: ${mesas.join(', ')}`;
+        form.style.display = 'none';
+        panel.style.display = 'block';
+        conectado = true;
+      }
+    });
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'alerta_llamada') {
+        const item = document.createElement('li');
+        item.textContent = `📍 Mesa ${data.mesa} está llamando`;
+        alertas.appendChild(item);
+
+        window.navigator.vibrate?.(200);
+
+        sonido.play().catch(e => {
+          console.log('🔇 Sonido bloqueado:', e);
+        });
+
+        if (Notification.permission === 'granted') {
+          new Notification(`📣 Llamado de mesa ${data.mesa}`, {
+            body: '¡La mesa necesita atención!',
+            icon: 'https://cdn-icons-png.flaticon.com/512/3595/3595455.png'
+          });
+        }
+      }
+    };
+  </script>
+</body>
+</html>
