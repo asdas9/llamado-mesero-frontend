@@ -120,6 +120,9 @@
       document.getElementById("nombre").textContent = `Mesero: ${nombre}`;
 
       ws = new WebSocket("wss://llamado-mesero-backend.onrender.com");
+      if (Notification.permission !== 'granted') {
+      Notification.requestPermission();
+      }
 
       ws.onopen = () => {
         ws.send(JSON.stringify({
@@ -135,6 +138,13 @@
         li.textContent = `📢 Mesa ${data.mesa} está llamando`;
         document.getElementById("notificaciones").appendChild(li);
         new Audio("ding.mp3").play();
+        window.navigator.vibrate?.(800);
+        if (Notification.permission === 'granted') {
+          new Notification(`📣 Llamado de mesa ${data.mesa}`, {
+            body: '¡La mesa necesita atención!',
+            icon: 'https://cdn-icons-png.flaticon.com/512/3595/3595455.png'
+          });
+        }
       };
     }
   </script>
