@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mesa</title>
   <style>
     body {
@@ -14,24 +14,28 @@
       justify-content: center;
       height: 100vh;
       margin: 0;
+      padding: 20px;
     }
     h2 {
+      font-size: 26px;
       color: #2c3e50;
+      margin-bottom: 10px;
     }
     #mesa-id {
-      color: #3498db;
+      color: #2980b9;
+      font-weight: bold;
     }
     button {
       margin-top: 30px;
-      padding: 15px 40px;
+      padding: 20px 40px;
       font-size: 20px;
       background-color: #e74c3c;
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-      transition: background 0.3s ease;
+      transition: background-color 0.3s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     button:hover {
       background-color: #c0392b;
@@ -39,21 +43,39 @@
   </style>
 </head>
 <body>
-  <h2>📍 Mesa <span id="mesa-id"></span></h2>
+  <h2>📍 Estás en la mesa <span id="mesa-id"></span></h2>
   <button onclick="llamar()">📣 Llamar al mesero</button>
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const mesa = params.get("mesa") || "desconocida";
-    document.getElementById("mesa-id").textContent = mesa;
+    const mesa = params.get("mesa");
+    const idSpan = document.getElementById("mesa-id");
+
+    if (!mesa) {
+      idSpan.textContent = "desconocida";
+      alert("⚠️ No se especificó la mesa. Usa '?mesa=5' en la URL.");
+    } else {
+      idSpan.textContent = mesa;
+    }
 
     const ws = new WebSocket("wss://llamado-mesero-backend.onrender.com");
+    const llamadas = [];
 
     function llamar() {
+      const ahora = Date.now();
+      llamadas.push(ahora);
+
+      const recientes = llamadas.filter(t => ahora - t < 5 * 60 * 1000);
+      if (recientes.length > 3) {
+        alert("🚫 Ya hiciste varios llamados recientemente. Espera unos minutos.");
+        return;
+      }
+
       ws.send(JSON.stringify({
         type: "llamar_mesero",
         mesa: mesa
       }));
+
       alert("✅ Llamado enviado al mesero");
     }
   </script>

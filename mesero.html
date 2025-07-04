@@ -2,58 +2,141 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mesero</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #ffffff;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px;
     }
-    h2 {
-      color: #2c3e50;
+    .form-section {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-top: 40px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 10px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      width: 100%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
       margin-bottom: 20px;
     }
-    ul {
-      list-style: none;
-      padding: 0;
+    .mesas-checkbox {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .mesas-checkbox label {
+      font-weight: normal;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #panel {
+      margin-top: 30px;
       width: 100%;
-      max-width: 400px;
+      max-width: 500px;
+    }
+    #nombre {
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    ul {
+      padding: 0;
+      list-style: none;
     }
     li {
-      background-color: #ecf0f1;
+      background: #ecf0f1;
+      padding: 12px;
       margin-bottom: 10px;
-      padding: 15px 20px;
       border-radius: 8px;
-      font-size: 18px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
   </style>
 </head>
 <body>
-  <h2>📋 Llamados recientes</h2>
-  <ul id="notificaciones"></ul>
+
+  <div class="form-section" id="login">
+    <label for="nombreInput">Nombre del mesero</label>
+    <input type="text" id="nombreInput" placeholder="Ej: Juan">
+
+    <div class="mesas-checkbox" id="checkboxes">
+      <!-- Generado dinámicamente -->
+    </div>
+
+    <button onclick="iniciarSesion()">Iniciar sesión</button>
+  </div>
+
+  <div id="panel" style="display:none;">
+    <div id="nombre"></div>
+    <ul id="notificaciones"></ul>
+  </div>
 
   <script>
-    const ws = new WebSocket("wss://llamado-mesero-backend.onrender.com");
+    // Generar checkboxes para mesas 1 a 10
+    const checkboxesDiv = document.getElementById("checkboxes");
+    for (let i = 1; i <= 10; i++) {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = i;
+      input.name = "mesas";
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(" Mesa " + i));
+      checkboxesDiv.appendChild(label);
+    }
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ type: "registro_mesero" }));
-    };
+    let ws;
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      const li = document.createElement("li");
-      li.textContent = `📢 Mesa ${data.mesa} está llamando`;
-      document.getElementById("notificaciones").appendChild(li);
+    function iniciarSesion() {
+      const nombre = document.getElementById("nombreInput").value.trim();
+      if (!nombre) return alert("Por favor ingresa un nombre.");
 
-      // Sonido
-      const audio = new Audio("ding.mp3");
-      audio.play();
-    };
+      const seleccionados = [...document.querySelectorAll("input[name='mesas']:checked")]
+        .map(input => input.value);
+
+      if (seleccionados.length === 0)
+        return alert("Selecciona al menos una mesa.");
+
+      document.getElementById("login").style.display = "none";
+      document.getElementById("panel").style.display = "block";
+      document.getElementById("nombre").textContent = `Mesero: ${nombre}`;
+
+      ws = new WebSocket("wss://llamado-mesero-backend.onrender.com");
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({
+          type: "registro_mesero",
+          nombre: nombre,
+          mesas: seleccionados
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const li = document.createElement("li");
+        li.textContent = `📢 Mesa ${data.mesa} está llamando`;
+        document.getElementById("notificaciones").appendChild(li);
+        new Audio("ding.mp3").play();
+      };
+    }
   </script>
 </body>
 </html>
